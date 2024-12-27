@@ -17,13 +17,16 @@ def send_to_telegram(message):
 
 # Fungsi untuk melakukan web scraping dan mencari link dengan kata "The Sandbox"
 def scrape_and_notify():
+    # Membuat session untuk menjaga cookie dan sesi
+    session = requests.Session()
+
     # Menambahkan header User-Agent untuk mensimulasikan permintaan dari browser
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
     }
 
-    # Mengirim permintaan GET dengan header User-Agent
-    response = requests.get(url, headers=headers)
+    # Mengirim permintaan GET dengan sesi dan header User-Agent
+    response = session.get(url, headers=headers)
 
     # Jika permintaan berhasil (status code 200), proses HTML
     if response.status_code == 200:
@@ -32,9 +35,6 @@ def scrape_and_notify():
         # Menyaring link dengan kata "the-sandbox" di href atau teks
         sandbox_links = soup.find_all("a", href=lambda href: href and "the-sandbox" in href.lower())
         
-        # Jika Anda ingin mencari "The Sandbox" dalam teks link, gunakan ini:
-        # sandbox_links = soup.find_all("a", string=lambda text: text and "the sandbox" in text.lower())
-
         # Jika ada link yang ditemukan
         if sandbox_links:
             message = "Link Quest The Sandbox:\n"
