@@ -28,7 +28,11 @@ def scrape_and_notify():
         "Accept-Language": "en-US,en;q=0.9",
         "Connection": "keep-alive",
         "Upgrade-Insecure-Requests": "1",
-        "DNT": "1"  # Do Not Track
+        "DNT": "1",  # Do Not Track
+        "Referer": "https://dune.com",  # Menambahkan Referer untuk menjelaskan sumber permintaan
+        "Origin": "https://dune.com",   # Menambahkan Origin
+        "Cache-Control": "max-age=0",   # Menghindari penggunaan cache yang mungkin kadaluarsa
+        "TE": "Trailers"  # Menambahkan TE header
     }
 
     # Mengirim permintaan GET dengan sesi dan header User-Agent
