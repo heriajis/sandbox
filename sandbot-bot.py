@@ -1,61 +1,50 @@
 import requests
 from bs4 import BeautifulSoup
 from telegram import Bot
+import time
 
-# Token bot Telegram Anda
-TOKEN = '8002094527:AAEVgIUGGEjAXop0Neib78oVwqkQnabI8jw'  # Ganti dengan token bot yang diberikan oleh @BotFather
-# Chat ID Anda (dapatkan dari @userinfobot)
-CHAT_ID = '5171922156'  # Ganti dengan chat ID yang Anda dapatkan
+# Konfigurasi bot Telegram
+BOT_TOKEN = "8002094527:AAEVgIUGGEjAXop0Neib78oVwqkQnabI8jw"
+CHAT_ID = "5171922156"  # ID user Anda
+bot = Bot(token=BOT_TOKEN)
 
-# URL halaman yang ingin di-scrape
-url = "https://dune.com/4brigade/layer3-quest-aggregator"  # Ganti dengan URL yang relevan
+# URL yang akan dipantau
+URL = "https://app.layer3.xyz/communities/the-sandbox?slug=the-sandbox"
 
-# Fungsi untuk mengirim pesan ke Telegram
-def send_to_telegram(message):
-    bot = Bot(token=TOKEN)
-    bot.send_message(chat_id=CHAT_ID, text=message)
+# Fungsi untuk mendapatkan daftar quest dari halaman
+def fetch_quests():
+    response = requests.get(URL)
+    if response.status_code != 200:
+        raise Exception(f"Failed to fetch data from {URL}. Status code: {response.status_code}")
 
-# Fungsi untuk melakukan web scraping dan mencari link dengan kata "The Sandbox"
-def scrape_and_notify():
-    # Membuat session untuk menjaga cookie dan sesi
-    session = requests.Session()
+    soup = BeautifulSoup(response.text, 'html.parser')
+    # Menggunakan kelas spesifik
+    quests = soup.find_all('div', class_='flex w-full min-w-0 grow flex-col justify-between gap-[28px] rounded-inherit mobile:gap-md')
+    return [quest.text.strip() for quest in quests]
 
-    # Menambahkan header User-Agent dan header lainnya untuk mensimulasikan browser biasa
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
-        "Accept-Encoding": "gzip, deflate, br",
-        "Accept-Language": "en-US,en;q=0.9",
-        "Connection": "keep-alive",
-        "Upgrade-Insecure-Requests": "1",
-        "DNT": "1",  # Do Not Track
-        "Referer": "https://dune.com",  # Menambahkan Referer untuk menjelaskan sumber permintaan
-        "Origin": "https://dune.com",   # Menambahkan Origin
-        "Cache-Control": "max-age=0",   # Menghindari penggunaan cache yang mungkin kadaluarsa
-        "TE": "Trailers"  # Menambahkan TE header
-    }
+# Simpan daftar quest terakhir
+last_quests = []
 
-    # Mengirim permintaan GET dengan sesi dan header User-Agent
-    response = session.get(url, headers=headers)
+def main():
+    global last_quests
+    while True:
+        try:
+            current_quests = fetch_quests()
+            if not last_quests:
+                last_quests = current_quests
 
-    # Jika permintaan berhasil (status code 200), proses HTML
-    if response.status_code == 200:
-        soup = BeautifulSoup(response.text, "html.parser")
-        
-        # Menyaring link dengan kata "the-sandbox" di href atau teks
-        sandbox_links = soup.find_all("a", href=lambda href: href and "the-sandbox" in href.lower())
-        
-        # Jika ada link yang ditemukan
-        if sandbox_links:
-            message = "Link Quest The Sandbox:\n"
-            for link in sandbox_links:
-                message += f"{link['href']} - {link.text.strip()}\n"
-            # Mengirimkan pesan ke Telegram
-            send_to_telegram(message)
-        else:
-            print("Tidak ada link dengan kata 'The Sandbox' ditemukan.")
-    else:
-        print(f"Gagal mengambil halaman: {response.status_code}")
+            # Cari quest baru
+            new_quests = [quest for quest in current_quests if quest not in last_quests]
+            if new_quests:
+                for quest in new_quests:
+                    bot.send_message(chat_id=CHAT_ID, text=f"Quest baru ditemukan: {quest}")
+                last_quests = current_quests
 
-# Menjalankan fungsi untuk pertama kali
-scrape_and_notify()
+        except Exception as e:
+            print(f"Terjadi kesalahan: {e}")
+
+        # Tunggu 5 menit sebelum memeriksa lagi
+        time.sleep(300)
+
+if __name__ == "__main__":
+    main()
