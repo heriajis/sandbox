@@ -2,6 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 from telegram import Bot
 import time
+from fake_useragent import FakeUserAgent
 
 # Konfigurasi bot Telegram
 BOT_TOKEN = "8002094527:AAEVgIUGGEjAXop0Neib78oVwqkQnabI8jw"
@@ -11,9 +12,24 @@ bot = Bot(token=BOT_TOKEN)
 # URL yang akan dipantau
 URL = "https://app.layer3.xyz/communities/the-sandbox?slug=the-sandbox"
 
+# Menggunakan FakeUserAgent untuk mendapatkan User-Agent yang acak
+user_agent = FakeUserAgent().random
+
+# Header lengkap untuk menghindari error 403
+headers = {
+    "Accept": "*/*",
+    "Accept-Language": "en-US,en;q=0.9",
+    "Origin": "https://app.layer3.xyz",
+    "Referer": "https://app.layer3.xyz/",
+    "Sec-Fetch-Dest": "empty",
+    "Sec-Fetch-Mode": "cors",
+    "Sec-Fetch-Site": "cross-site",
+    "User-Agent": user_agent
+}
+
 # Fungsi untuk mendapatkan daftar quest dari halaman
 def fetch_quests():
-    response = requests.get(URL)
+    response = requests.get(URL, headers=headers)
     if response.status_code != 200:
         raise Exception(f"Failed to fetch data from {URL}. Status code: {response.status_code}")
 
